@@ -41,16 +41,88 @@
       padding: 1.5rem 1rem;
     }
 
+    /* LOCK SCREEN OVERLAY */
+    #lock-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--bg);
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .lock-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .lock-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .lock-sub {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .lock-error {
+      color: var(--danger);
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      display: none;
+    }
+
+    /* APP MAIN CONTENT */
+    #app-content {
+      display: none; /* Hidden until unlocked */
+      width: 100%;
+      max-width: 1000px;
+    }
+
     header {
       text-align: center;
       margin-bottom: 1.5rem;
       width: 100%;
-      max-width: 1000px;
+      position: relative;
     }
 
     header h1 {
       font-size: 2rem;
       font-weight: 700;
+    }
+
+    .lock-btn-top {
+      position: absolute;
+      right: 0;
+      top: 0;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .lock-btn-top:hover {
+      color: var(--danger);
+      border-color: var(--danger);
     }
 
     /* NAVIGATION TABS */
@@ -90,10 +162,8 @@
       color: white;
     }
 
-    /* CONTAINER & TABS DISPLAY */
     .container {
       width: 100%;
-      max-width: 1000px;
     }
 
     .tab-content {
@@ -419,108 +489,164 @@
 </head>
 <body>
 
-  <header>
-    <h1>💻 Dev Student Hub</h1>
-    <nav class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('hub')">Main Hub</button>
-      <button class="tab-btn" onclick="switchTab('assignments')">School Assignments</button>
-      <button class="tab-btn" onclick="switchTab('workspace')">Notes, Loader & Code Vault</button>
-    </nav>
-  </header>
-
-  <div class="container">
-
-    <!-- TAB 1: MAIN HUB -->
-    <div id="tab-hub" class="tab-content active">
-      
-      <!-- Dynamic Assignment Alerts Banner -->
-      <div id="urgent-alert-container"></div>
-
-      <div class="grid-2">
-        <!-- Clock & Date -->
-        <div class="card center-text">
-          <div class="card-title">Local Time & Date</div>
-          <div id="clock-time">00:00:00 AM</div>
-          <div id="clock-date">Loading date...</div>
-        </div>
-
-        <!-- Focus Timer -->
-        <div class="card center-text">
-          <div class="card-title">Focus Timer</div>
-          <div class="timer-modes">
-            <button class="btn-mode active" onclick="setTimerMode(25, this)">Work (25m)</button>
-            <button class="btn-mode" onclick="setTimerMode(5, this)">Short Break (5m)</button>
-            <button class="btn-mode" onclick="setTimerMode(15, this)">Long Break (15m)</button>
-          </div>
-          <div class="timer-display" id="timer-display">25:00</div>
-          <div>
-            <button class="btn" id="start-btn" onclick="toggleTimer()">Start</button>
-            <button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
-          </div>
-        </div>
+  <!-- LOCK SCREEN SCREEN OVERLAY -->
+  <div id="lock-screen">
+    <div class="lock-card">
+      <div class="lock-title">🔒 Protected Workspace</div>
+      <p class="lock-sub">Enter your password to unlock the site</p>
+      <div class="form-group">
+        <input type="password" id="password-input" class="input-field" placeholder="Password" onkeypress="handleLockKeyPress(event)">
+        <button class="btn" onclick="verifyPassword()">Unlock</button>
       </div>
-
+      <div id="lock-error" class="lock-error">Incorrect password. Please try again.</div>
     </div>
+  </div>
 
-    <!-- TAB 2: SCHOOL ASSIGNMENTS -->
-    <div id="tab-assignments" class="tab-content">
-      <div class="card">
-        <div class="card-title">Add New Assignment</div>
-        <form id="assignment-form" onsubmit="addAssignment(event)">
-          <div class="form-group">
-            <input type="text" id="assign-name" class="input-field" placeholder="Assignment Name (e.g., CS101 Project 1)" required>
-            <input type="url" id="assign-link" class="input-field" placeholder="Link (e.g., https://canvas.edu/assignment/123)">
-            <input type="datetime-local" id="assign-due" class="input-field" required>
+  <!-- MAIN APP CONTENT -->
+  <div id="app-content">
+
+    <header>
+      <button class="lock-btn-top" onclick="lockSite()">🔒 Lock Site</button>
+      <h1>💻 Dev Student Hub</h1>
+      <nav class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('hub')">Main Hub</button>
+        <button class="tab-btn" onclick="switchTab('assignments')">School Assignments</button>
+        <button class="tab-btn" onclick="switchTab('workspace')">Notes, Loader & Code Vault</button>
+      </nav>
+    </header>
+
+    <div class="container">
+
+      <!-- TAB 1: MAIN HUB -->
+      <div id="tab-hub" class="tab-content active">
+        
+        <!-- Dynamic Assignment Alerts Banner -->
+        <div id="urgent-alert-container"></div>
+
+        <div class="grid-2">
+          <!-- Clock & Date -->
+          <div class="card center-text">
+            <div class="card-title">Local Time & Date</div>
+            <div id="clock-time">00:00:00 AM</div>
+            <div id="clock-date">Loading date...</div>
           </div>
-          <button type="submit" class="btn">Add Assignment</button>
-        </form>
-      </div>
 
-      <div class="card">
-        <div class="card-title">Your Assignments</div>
-        <ul id="assignment-list" class="item-list"></ul>
-      </div>
-    </div>
-
-    <!-- TAB 3: WORKSPACE, HTML LOADER & CODE VAULT -->
-    <div id="tab-workspace" class="tab-content">
-      
-      <div class="grid-2">
-        <!-- Text Documents / Quick Notes -->
-        <div class="card">
-          <div class="card-title">Text Documents / Notes</div>
-          <div class="form-group">
-            <input type="text" id="note-title" class="input-field" placeholder="Document Title...">
-            <textarea id="note-content" rows="4" placeholder="Write your notes, specs, or study thoughts here..."></textarea>
-            <button class="btn" onclick="saveNote()">Save Note</button>
-          </div>
-          <hr style="border-color: var(--border); margin: 1rem 0;">
-          <div id="notes-list" class="item-list"></div>
-        </div>
-
-        <!-- HTML Loader & Live Preview -->
-        <div class="card">
-          <div class="card-title">HTML Loader & Live Preview</div>
-          <div class="form-group">
-            <textarea id="html-input" class="code-font" rows="5" placeholder="Paste or write HTML/CSS code here... e.g. <h2 style='color:blue;'>Hello World!</h2>"></textarea>
-            <div style="display:flex; gap:0.5rem;">
-              <button class="btn" style="flex:1;" onclick="renderHTMLLoader()">Load & Preview HTML</button>
-              <button class="btn btn-secondary" onclick="clearHTMLLoader()">Clear</button>
+          <!-- Focus Timer -->
+          <div class="card center-text">
+            <div class="card-title">Focus Timer</div>
+            <div class="timer-modes">
+              <button class="btn-mode active" onclick="setTimerMode(25, this)">Work (25m)</button>
+              <button class="btn-mode" onclick="setTimerMode(5, this)">Short Break (5m)</button>
+              <button class="btn-mode" onclick="setTimerMode(15, this)">Long Break (15m)</button>
+            </div>
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div>
+              <button class="btn" id="start-btn" onclick="toggleTimer()">Start</button>
+              <button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
             </div>
           </div>
-          <iframe id="html-preview" class="preview-frame" title="HTML Live Preview"></iframe>
+        </div>
+
+      </div>
+
+      <!-- TAB 2: SCHOOL ASSIGNMENTS -->
+      <div id="tab-assignments" class="tab-content">
+        <div class="card">
+          <div class="card-title">Add New Assignment</div>
+          <form id="assignment-form" onsubmit="addAssignment(event)">
+            <div class="form-group">
+              <input type="text" id="assign-name" class="input-field" placeholder="Assignment Name (e.g., CS101 Project 1)" required>
+              <input type="url" id="assign-link" class="input-field" placeholder="Link (e.g., https://canvas.edu/assignment/123)">
+              <input type="datetime-local" id="assign-due" class="input-field" required>
+            </div>
+            <button type="submit" class="btn">Add Assignment</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Your Assignments</div>
+          <ul id="assignment-list" class="item-list"></ul>
         </div>
       </div>
 
-      <!-- Code Saver & Library Section -->
-      <div class="card">
-        <div class="card-title">Save Code Snippet</div>
-        <div class="form-group">
-          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <input type="text" id="code-title" class="input-field" placeholder="Code Title (e.g., Quick sort algorithm)" style="flex: 2; min-width: 200px;" required>
+      <!-- TAB 3: WORKSPACE, HTML LOADER & CODE VAULT -->
+      <div id="tab-workspace" class="tab-content">
+        
+        <div class="grid-2">
+          <!-- Text Documents / Quick Notes -->
+          <div class="card">
+            <div class="card-title">Text Documents / Notes</div>
+            <div class="form-group">
+              <input type="text" id="note-title" class="input-field" placeholder="Document Title...">
+              <textarea id="note-content" rows="4" placeholder="Write your notes, specs, or study thoughts here..."></textarea>
+              <button class="btn" onclick="saveNote()">Save Note</button>
+            </div>
+            <hr style="border-color: var(--border); margin: 1rem 0;">
+            <div id="notes-list" class="item-list"></div>
+          </div>
+
+          <!-- HTML Loader & Live Preview -->
+          <div class="card">
+            <div class="card-title">HTML Loader & Live Preview</div>
+            <div class="form-group">
+              <textarea id="html-input" class="code-font" rows="5" placeholder="Paste or write HTML/CSS code here... e.g. <h2 style='color:blue;'>Hello World!</h2>"></textarea>
+              <div style="display:flex; gap:0.5rem;">
+                <button class="btn" style="flex:1;" onclick="renderHTMLLoader()">Load & Preview HTML</button>
+                <button class="btn btn-secondary" onclick="clearHTMLLoader()">Clear</button>
+              </div>
+            </div>
+            <iframe id="html-preview" class="preview-frame" title="HTML Live Preview"></iframe>
+          </div>
+        </div>
+
+        <!-- Code Saver & Library Section -->
+        <div class="card">
+          <div class="card-title">Save Code Snippet</div>
+          <div class="form-group">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <input type="text" id="code-title" class="input-field" placeholder="Code Title (e.g., Quick sort algorithm)" style="flex: 2; min-width: 200px;" required>
+              
+              <!-- Language Selection Dropdown -->
+              <select id="code-lang" style="flex: 1; min-width: 150px;">
+                <option value="HTML">HTML</option>
+                <option value="CSS">CSS</option>
+                <option value="JavaScript">JavaScript</option>
+                <option value="TypeScript">TypeScript</option>
+                <option value="Python">Python</option>
+                <option value="Java">Java</option>
+                <option value="C++">C++</option>
+                <option value="C">C</option>
+                <option value="C#">C#</option>
+                <option value="PHP">PHP</option>
+                <option value="Ruby">Ruby</option>
+                <option value="Go">Go</option>
+                <option value="Rust">Rust</option>
+                <option value="SQL">SQL</option>
+                <option value="Bash/Shell">Bash / Shell</option>
+                <option value="Swift">Swift</option>
+                <option value="Kotlin">Kotlin</option>
+                <option value="JSON">JSON</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <input type="text" id="code-desc" class="input-field" placeholder="Description (Optional, e.g., Used for homework assignment 3)">
             
-            <!-- Language Selection Dropdown -->
-            <select id="code-lang" style="flex: 1; min-width: 150px;">
+            <textarea id="code-body" class="code-font" rows="6" placeholder="Paste your code snippet here..." required></textarea>
+            
+            <button class="btn" onclick="saveCodeSnippet()">Save Code Snippet</button>
+          </div>
+        </div>
+
+        <!-- Saved Code Snippets Vault -->
+        <div class="card">
+          <div class="card-title">Code Vault & Library</div>
+          
+          <!-- Search and Language Filter Bar -->
+          <div class="filter-bar">
+            <input type="text" id="code-search-input" class="input-field" placeholder="🔍 Search saved code by title or keyword..." oninput="renderCodeSnippets()">
+            <select id="code-filter-lang" onchange="renderCodeSnippets()">
+              <option value="ALL">Filter by Language (All)</option>
               <option value="HTML">HTML</option>
               <option value="CSS">CSS</option>
               <option value="JavaScript">JavaScript</option>
@@ -543,59 +669,76 @@
             </select>
           </div>
 
-          <input type="text" id="code-desc" class="input-field" placeholder="Description (Optional, e.g., Used for homework assignment 3)">
-          
-          <textarea id="code-body" class="code-font" rows="6" placeholder="Paste your code snippet here..." required></textarea>
-          
-          <button class="btn" onclick="saveCodeSnippet()">Save Code Snippet</button>
-        </div>
-      </div>
-
-      <!-- Saved Code Snippets Vault -->
-      <div class="card">
-        <div class="card-title">Code Vault & Library</div>
-        
-        <!-- Search and Language Filter Bar -->
-        <div class="filter-bar">
-          <input type="text" id="code-search-input" class="input-field" placeholder="🔍 Search saved code by title or keyword..." oninput="renderCodeSnippets()">
-          <select id="code-filter-lang" onchange="renderCodeSnippets()">
-            <option value="ALL">Filter by Language (All)</option>
-            <option value="HTML">HTML</option>
-            <option value="CSS">CSS</option>
-            <option value="JavaScript">JavaScript</option>
-            <option value="TypeScript">TypeScript</option>
-            <option value="Python">Python</option>
-            <option value="Java">Java</option>
-            <option value="C++">C++</option>
-            <option value="C">C</option>
-            <option value="C#">C#</option>
-            <option value="PHP">PHP</option>
-            <option value="Ruby">Ruby</option>
-            <option value="Go">Go</option>
-            <option value="Rust">Rust</option>
-            <option value="SQL">SQL</option>
-            <option value="Bash/Shell">Bash / Shell</option>
-            <option value="Swift">Swift</option>
-            <option value="Kotlin">Kotlin</option>
-            <option value="JSON">JSON</option>
-            <option value="Other">Other</option>
-          </select>
+          <div id="code-vault-list" class="item-list"></div>
         </div>
 
-        <div id="code-vault-list" class="item-list"></div>
       </div>
 
     </div>
 
-  </div>
+    <div class="quick-links">
+      <a href="https://github.com" target="_blank">🔗 GitHub</a>
+      <a href="https://stackoverflow.com" target="_blank">🔗 Stack Overflow</a>
+      <a href="https://developer.mozilla.org" target="_blank">🔗 MDN Web Docs</a>
+    </div>
 
-  <div class="quick-links">
-    <a href="https://github.com" target="_blank">🔗 GitHub</a>
-    <a href="https://stackoverflow.com" target="_blank">🔗 Stack Overflow</a>
-    <a href="https://developer.mozilla.org" target="_blank">🔗 MDN Web Docs</a>
   </div>
 
   <script>
+    /* ================= PASSWORD & SECURITY ================= */
+    // Encrypted SHA-256 Hash of "Stud7Hu8_"
+    const TARGET_HASH = "851d709390b367c9df9f3e1b50b4471bc514c5afd07df4a10ad592691d0934c0";
+
+    async function hashString(str) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function verifyPassword() {
+      const input = document.getElementById('password-input').value;
+      const errorEl = document.getElementById('lock-error');
+      const hashedInput = await hashString(input);
+
+      if (hashedInput === TARGET_HASH) {
+        localStorage.setItem('hub_authenticated', 'true');
+        unlockSite();
+      } else {
+        errorEl.style.display = 'block';
+        document.getElementById('password-input').value = '';
+      }
+    }
+
+    function unlockSite() {
+      document.getElementById('lock-screen').style.display = 'none';
+      document.getElementById('app-content').style.display = 'block';
+    }
+
+    function lockSite() {
+      localStorage.removeItem('hub_authenticated');
+      document.getElementById('password-input').value = '';
+      document.getElementById('lock-error').style.display = 'none';
+      document.getElementById('app-content').style.display = 'none';
+      document.getElementById('lock-screen').style.display = 'flex';
+    }
+
+    function handleLockKeyPress(e) {
+      if (e.key === 'Enter') {
+        verifyPassword();
+      }
+    }
+
+    // Auto-login check on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('hub_authenticated') === 'true') {
+        unlockSite();
+      } else {
+        lockSite();
+      }
+    });
+
     /* ================= TAB SWITCHING ================= */
     function switchTab(tabName) {
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -871,7 +1014,6 @@
       const searchQuery = document.getElementById('code-search-input').value.toLowerCase();
       const langFilter = document.getElementById('code-filter-lang').value;
 
-      // Filter by Search Query & Selected Language
       const filtered = codeSnippets.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(searchQuery) || 
                               item.desc.toLowerCase().includes(searchQuery) ||
