@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dev Workspace & Study Hub</title>
+  <title>Workspace & Study Hub</title>
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   
   <style>
     :root {
@@ -21,6 +21,7 @@
       --danger: #ef4444;
       --success: #10b981;
       --border: #334155;
+      --code-bg: #0b1329;
     }
 
     * {
@@ -249,6 +250,11 @@
       font-family: inherit;
     }
 
+    textarea.code-font {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+    }
+
     .input-field:focus, textarea:focus, select:focus {
       border-color: var(--accent);
     }
@@ -284,11 +290,28 @@
       border: 1px solid var(--danger);
       padding: 0.3rem 0.6rem;
       font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
     }
 
     .btn-danger:hover {
       background-color: var(--danger);
       color: white;
+    }
+
+    .btn-copy {
+      background-color: transparent;
+      color: #38bdf8;
+      border: 1px solid #38bdf8;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-copy:hover {
+      background-color: #38bdf8;
+      color: #000;
     }
 
     /* TABLE / LIST STYLES */
@@ -327,14 +350,53 @@
 
     .badge {
       font-size: 0.75rem;
-      padding: 0.2rem 0.5rem;
+      padding: 0.2rem 0.55rem;
       border-radius: 4px;
       font-weight: 600;
       display: inline-block;
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.4);
     }
 
-    .badge-progress { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
-    .badge-done { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    /* CODE SNIPPET BLOCK DISPLAY */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+
+    /* HTML PREVIEW IFRAME */
+    .preview-frame {
+      width: 100%;
+      height: 220px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-top: 0.75rem;
+    }
+
+    /* FILTER BAR */
+    .filter-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar .input-field, .filter-bar select {
+      flex: 1;
+      min-width: 180px;
+    }
 
     /* FOOTER LINKS */
     .quick-links {
@@ -362,7 +424,7 @@
     <nav class="nav-tabs">
       <button class="tab-btn active" onclick="switchTab('hub')">Main Hub</button>
       <button class="tab-btn" onclick="switchTab('assignments')">School Assignments</button>
-      <button class="tab-btn" onclick="switchTab('workspace')">Notes & Project Log</button>
+      <button class="tab-btn" onclick="switchTab('workspace')">Notes, Loader & Code Vault</button>
     </nav>
   </header>
 
@@ -420,38 +482,109 @@
       </div>
     </div>
 
-    <!-- TAB 3: NOTES & PROJECT LOG -->
+    <!-- TAB 3: WORKSPACE, HTML LOADER & CODE VAULT -->
     <div id="tab-workspace" class="tab-content">
+      
       <div class="grid-2">
         <!-- Text Documents / Quick Notes -->
         <div class="card">
           <div class="card-title">Text Documents / Notes</div>
           <div class="form-group">
             <input type="text" id="note-title" class="input-field" placeholder="Document Title...">
-            <textarea id="note-content" rows="5" placeholder="Write your notes, specs, or draft code here..."></textarea>
+            <textarea id="note-content" rows="4" placeholder="Write your notes, specs, or study thoughts here..."></textarea>
             <button class="btn" onclick="saveNote()">Save Note</button>
           </div>
           <hr style="border-color: var(--border); margin: 1rem 0;">
           <div id="notes-list" class="item-list"></div>
         </div>
 
-        <!-- Project Tracker -->
+        <!-- HTML Loader & Live Preview -->
         <div class="card">
-          <div class="card-title">Project Log</div>
+          <div class="card-title">HTML Loader & Live Preview</div>
           <div class="form-group">
-            <input type="text" id="proj-name" class="input-field" placeholder="Project Title">
-            <input type="url" id="proj-link" class="input-field" placeholder="GitHub Repo Link">
-            <select id="proj-status">
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-            </select>
-            <textarea id="proj-desc" rows="2" placeholder="Brief project description or logs..."></textarea>
-            <button class="btn" onclick="addProject()">Log Project</button>
+            <textarea id="html-input" class="code-font" rows="5" placeholder="Paste or write HTML/CSS code here... e.g. <h2 style='color:blue;'>Hello World!</h2>"></textarea>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn" style="flex:1;" onclick="renderHTMLLoader()">Load & Preview HTML</button>
+              <button class="btn btn-secondary" onclick="clearHTMLLoader()">Clear</button>
+            </div>
           </div>
-          <hr style="border-color: var(--border); margin: 1rem 0;">
-          <div id="projects-list" class="item-list"></div>
+          <iframe id="html-preview" class="preview-frame" title="HTML Live Preview"></iframe>
         </div>
       </div>
+
+      <!-- Code Saver & Library Section -->
+      <div class="card">
+        <div class="card-title">Save Code Snippet</div>
+        <div class="form-group">
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <input type="text" id="code-title" class="input-field" placeholder="Code Title (e.g., Quick sort algorithm)" style="flex: 2; min-width: 200px;" required>
+            
+            <!-- Language Selection Dropdown -->
+            <select id="code-lang" style="flex: 1; min-width: 150px;">
+              <option value="HTML">HTML</option>
+              <option value="CSS">CSS</option>
+              <option value="JavaScript">JavaScript</option>
+              <option value="TypeScript">TypeScript</option>
+              <option value="Python">Python</option>
+              <option value="Java">Java</option>
+              <option value="C++">C++</option>
+              <option value="C">C</option>
+              <option value="C#">C#</option>
+              <option value="PHP">PHP</option>
+              <option value="Ruby">Ruby</option>
+              <option value="Go">Go</option>
+              <option value="Rust">Rust</option>
+              <option value="SQL">SQL</option>
+              <option value="Bash/Shell">Bash / Shell</option>
+              <option value="Swift">Swift</option>
+              <option value="Kotlin">Kotlin</option>
+              <option value="JSON">JSON</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <input type="text" id="code-desc" class="input-field" placeholder="Description (Optional, e.g., Used for homework assignment 3)">
+          
+          <textarea id="code-body" class="code-font" rows="6" placeholder="Paste your code snippet here..." required></textarea>
+          
+          <button class="btn" onclick="saveCodeSnippet()">Save Code Snippet</button>
+        </div>
+      </div>
+
+      <!-- Saved Code Snippets Vault -->
+      <div class="card">
+        <div class="card-title">Code Vault & Library</div>
+        
+        <!-- Search and Language Filter Bar -->
+        <div class="filter-bar">
+          <input type="text" id="code-search-input" class="input-field" placeholder="🔍 Search saved code by title or keyword..." oninput="renderCodeSnippets()">
+          <select id="code-filter-lang" onchange="renderCodeSnippets()">
+            <option value="ALL">Filter by Language (All)</option>
+            <option value="HTML">HTML</option>
+            <option value="CSS">CSS</option>
+            <option value="JavaScript">JavaScript</option>
+            <option value="TypeScript">TypeScript</option>
+            <option value="Python">Python</option>
+            <option value="Java">Java</option>
+            <option value="C++">C++</option>
+            <option value="C">C</option>
+            <option value="C#">C#</option>
+            <option value="PHP">PHP</option>
+            <option value="Ruby">Ruby</option>
+            <option value="Go">Go</option>
+            <option value="Rust">Rust</option>
+            <option value="SQL">SQL</option>
+            <option value="Bash/Shell">Bash / Shell</option>
+            <option value="Swift">Swift</option>
+            <option value="Kotlin">Kotlin</option>
+            <option value="JSON">JSON</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div id="code-vault-list" class="item-list"></div>
+      </div>
+
     </div>
 
   </div>
@@ -585,7 +718,7 @@
           </div>
           <div style="display:flex; gap:0.5rem; align-items:center;">
             <input type="checkbox" ${a.completed ? 'checked' : ''} onclick="toggleAssignment(${a.id})">
-            <button class="btn btn-danger" onclick="deleteAssignment(${a.id})">Delete</button>
+            <button class="btn-danger" onclick="deleteAssignment(${a.id})">Delete</button>
           </div>
         `;
         list.appendChild(li);
@@ -597,12 +730,11 @@
       const alertContainer = document.getElementById('urgent-alert-container');
       const now = new Date();
       
-      // Filter uncompleted assignments due within 3 days or overdue
       const urgent = assignments.filter(a => {
         if (a.completed) return false;
         const dueDate = new Date(a.due);
         const diffHours = (dueDate - now) / (1000 * 60 * 60);
-        return diffHours <= 72; // Within 72 hours (3 days) or past due
+        return diffHours <= 72; // Within 72 hours
       });
 
       if (urgent.length === 0) {
@@ -610,10 +742,7 @@
         return;
       }
 
-      let html = `
-        <div class="warning-banner">
-          <div class="warning-title">⚠️ Upcoming / Overdue Assignment Alerts</div>
-      `;
+      let html = `<div class="warning-banner"><div class="warning-title">⚠️ Upcoming / Overdue Assignment Alerts</div>`;
 
       urgent.forEach(a => {
         const dueDate = new Date(a.due);
@@ -667,60 +796,114 @@
         div.innerHTML = `
           <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
             <span class="item-title">${escapeHTML(n.title)}</span>
-            <button class="btn btn-danger" onclick="deleteNote(${n.id})">Delete</button>
+            <button class="btn-danger" onclick="deleteNote(${n.id})">Delete</button>
           </div>
           <span class="item-sub" style="margin-bottom:0.5rem;">Saved on: ${n.date}</span>
-          <p style="white-space: pre-wrap; font-size: 0.9rem; color: var(--text-main); font-family: 'JetBrains Mono', monospace; background: var(--card-bg); padding: 0.5rem; border-radius: 4px; width: 100%;">${escapeHTML(n.content)}</p>
+          <p style="white-space: pre-wrap; font-size: 0.9rem; color: var(--text-main); background: var(--card-bg); padding: 0.5rem; border-radius: 4px; width: 100%; border: 1px solid var(--border);">${escapeHTML(n.content)}</p>
         `;
         list.appendChild(div);
       });
     }
 
-    /* ================= PROJECT LOG ================= */
-    let projects = JSON.parse(localStorage.getItem('hub_projects')) || [];
+    /* ================= HTML LOADER ================= */
+    function renderHTMLLoader() {
+      const code = document.getElementById('html-input').value;
+      const iframe = document.getElementById('html-preview');
+      iframe.srcdoc = code;
+    }
 
-    function addProject() {
-      const name = document.getElementById('proj-name').value.trim();
-      const link = document.getElementById('proj-link').value.trim();
-      const status = document.getElementById('proj-status').value;
-      const desc = document.getElementById('proj-desc').value.trim();
+    function clearHTMLLoader() {
+      document.getElementById('html-input').value = '';
+      document.getElementById('html-preview').srcdoc = '';
+    }
 
-      if (!name) {
-        alert('Please provide a project title.');
+    /* ================= CODE VAULT / SNIPPET SAVER ================= */
+    let codeSnippets = JSON.parse(localStorage.getItem('hub_code_snippets')) || [];
+
+    function saveCodeSnippet() {
+      const title = document.getElementById('code-title').value.trim();
+      const lang = document.getElementById('code-lang').value;
+      const desc = document.getElementById('code-desc').value.trim();
+      const code = document.getElementById('code-body').value.trim();
+
+      if (!title || !code) {
+        alert('Please fill out both the Code Title and the Code Snippet text box.');
         return;
       }
 
-      projects.push({ id: Date.now(), name, link, status, desc });
-      localStorage.setItem('hub_projects', JSON.stringify(projects));
-      
-      document.getElementById('proj-name').value = '';
-      document.getElementById('proj-link').value = '';
-      document.getElementById('proj-desc').value = '';
-      renderProjects();
+      codeSnippets.push({
+        id: Date.now(),
+        title,
+        lang,
+        desc,
+        code,
+        date: new Date().toLocaleDateString()
+      });
+
+      localStorage.setItem('hub_code_snippets', JSON.stringify(codeSnippets));
+
+      document.getElementById('code-title').value = '';
+      document.getElementById('code-desc').value = '';
+      document.getElementById('code-body').value = '';
+
+      renderCodeSnippets();
     }
 
-    function deleteProject(id) {
-      projects = projects.filter(p => p.id !== id);
-      localStorage.setItem('hub_projects', JSON.stringify(projects));
-      renderProjects();
+    function deleteCodeSnippet(id) {
+      codeSnippets = codeSnippets.filter(c => c.id !== id);
+      localStorage.setItem('hub_code_snippets', JSON.stringify(codeSnippets));
+      renderCodeSnippets();
     }
 
-    function renderProjects() {
-      const list = document.getElementById('projects-list');
-      list.innerHTML = projects.length === 0 ? '<p style="color:var(--text-muted)">No projects logged.</p>' : '';
+    function copySnippetCode(id, btnElement) {
+      const item = codeSnippets.find(c => c.id === id);
+      if (item) {
+        navigator.clipboard.writeText(item.code).then(() => {
+          const originalText = btnElement.textContent;
+          btnElement.textContent = 'Copied!';
+          setTimeout(() => btnElement.textContent = originalText, 1500);
+        });
+      }
+    }
 
-      projects.forEach(p => {
+    function renderCodeSnippets() {
+      const list = document.getElementById('code-vault-list');
+      const searchQuery = document.getElementById('code-search-input').value.toLowerCase();
+      const langFilter = document.getElementById('code-filter-lang').value;
+
+      // Filter by Search Query & Selected Language
+      const filtered = codeSnippets.filter(item => {
+        const matchesSearch = item.title.toLowerCase().includes(searchQuery) || 
+                              item.desc.toLowerCase().includes(searchQuery) ||
+                              item.code.toLowerCase().includes(searchQuery);
+        const matchesLang = langFilter === 'ALL' || item.lang === langFilter;
+        return matchesSearch && matchesLang;
+      });
+
+      list.innerHTML = filtered.length === 0 ? '<p style="color:var(--text-muted)">No code snippets found matching your filter.</p>' : '';
+
+      filtered.forEach(item => {
         const div = document.createElement('div');
         div.className = 'item-card';
+        div.style.flexDirection = 'column';
+        div.style.alignItems = 'flex-start';
+
         div.innerHTML = `
-          <div class="item-info">
-            <span class="item-title">${escapeHTML(p.name)} 
-              <span class="badge ${p.status === 'Completed' ? 'badge-done' : 'badge-progress'}">${p.status}</span>
-            </span>
-            ${p.desc ? `<span class="item-sub">${escapeHTML(p.desc)}</span>` : ''}
-            ${p.link ? `<a href="${p.link}" target="_blank" class="alert-link">Repository / Link ↗</a>` : ''}
+          <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <span class="item-title">${escapeHTML(item.title)}</span>
+              <span class="badge" style="margin-left: 0.5rem;">${item.lang}</span>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn-copy" onclick="copySnippetCode(${item.id}, this)">Copy Code</button>
+              <button class="btn-danger" onclick="deleteCodeSnippet(${item.id})">Delete</button>
+            </div>
           </div>
-          <button class="btn btn-danger" onclick="deleteProject(${p.id})">Delete</button>
+          
+          ${item.desc ? `<span class="item-sub" style="margin-top:0.25rem;">${escapeHTML(item.desc)}</span>` : ''}
+          <span class="item-sub" style="font-size: 0.75rem;">Saved on: ${item.date}</span>
+          
+          <pre class="code-block"><code>${escapeHTML(item.code)}</code></pre>
         `;
         list.appendChild(div);
       });
@@ -736,7 +919,7 @@
     // INITIAL RENDERS
     renderAssignments();
     renderNotes();
-    renderProjects();
+    renderCodeSnippets();
     checkDueWarnings();
   </script>
 </body>
