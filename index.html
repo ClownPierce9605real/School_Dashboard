@@ -80,13 +80,6 @@
       margin-bottom: 1.5rem;
     }
 
-    .lock-error {
-      color: var(--danger);
-      font-size: 0.85rem;
-      margin-top: 0.75rem;
-      display: none;
-    }
-
     /* APP MAIN CONTENT */
     #app-content {
       display: none; /* Hidden until unlocked */
@@ -369,6 +362,21 @@
       color: white;
     }
 
+    .btn-edit {
+      background-color: transparent;
+      color: var(--warning);
+      border: 1px solid var(--warning);
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-edit:hover {
+      background-color: var(--warning);
+      color: #000;
+    }
+
     .btn-copy {
       background-color: transparent;
       color: #38bdf8;
@@ -489,16 +497,15 @@
 </head>
 <body>
 
-  <!-- LOCK SCREEN SCREEN OVERLAY -->
+  <!-- LOCK SCREEN OVERLAY -->
   <div id="lock-screen">
     <div class="lock-card">
       <div class="lock-title">🔒 Protected Workspace</div>
-      <p class="lock-sub">Enter your password to unlock the site</p>
+      <p class="lock-sub">Enter your password to unlock the site.<br><span style="color: red;">If password is entered incorrectly you will be locked out!</span></p>
       <div class="form-group">
         <input type="password" id="password-input" class="input-field" placeholder="Password" onkeypress="handleLockKeyPress(event)">
         <button class="btn" onclick="verifyPassword()">Unlock</button>
       </div>
-      <div id="lock-error" class="lock-error">Incorrect password. Please try again.</div>
     </div>
   </div>
 
@@ -551,15 +558,18 @@
 
       <!-- TAB 2: SCHOOL ASSIGNMENTS -->
       <div id="tab-assignments" class="tab-content">
-        <div class="card">
-          <div class="card-title">Add New Assignment</div>
+        <div class="card" id="assignment-form-card">
+          <div class="card-title" id="assign-form-title">Add New Assignment</div>
           <form id="assignment-form" onsubmit="addAssignment(event)">
             <div class="form-group">
               <input type="text" id="assign-name" class="input-field" placeholder="Assignment Name (e.g., CS101 Project 1)" required>
               <input type="url" id="assign-link" class="input-field" placeholder="Link (e.g., https://canvas.edu/assignment/123)">
               <input type="datetime-local" id="assign-due" class="input-field" required>
             </div>
-            <button type="submit" class="btn">Add Assignment</button>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="submit" class="btn" id="assign-submit-btn">Add Assignment</button>
+              <button type="button" class="btn btn-secondary" id="assign-cancel-btn" style="display:none;" onclick="cancelAssignmentEdit()">Cancel</button>
+            </div>
           </form>
         </div>
 
@@ -574,12 +584,15 @@
         
         <div class="grid-2">
           <!-- Text Documents / Quick Notes -->
-          <div class="card">
-            <div class="card-title">Text Documents / Notes</div>
+          <div class="card" id="notes-form-card">
+            <div class="card-title" id="note-form-title">Text Documents / Notes</div>
             <div class="form-group">
               <input type="text" id="note-title" class="input-field" placeholder="Document Title...">
               <textarea id="note-content" rows="4" placeholder="Write your notes, specs, or study thoughts here..."></textarea>
-              <button class="btn" onclick="saveNote()">Save Note</button>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn" id="note-submit-btn" onclick="saveNote()">Save Note</button>
+                <button class="btn btn-secondary" id="note-cancel-btn" style="display:none;" onclick="cancelNoteEdit()">Cancel</button>
+              </div>
             </div>
             <hr style="border-color: var(--border); margin: 1rem 0;">
             <div id="notes-list" class="item-list"></div>
@@ -600,8 +613,8 @@
         </div>
 
         <!-- Code Saver & Library Section -->
-        <div class="card">
-          <div class="card-title">Save Code Snippet</div>
+        <div class="card" id="code-form-card">
+          <div class="card-title" id="code-form-title">Save Code Snippet</div>
           <div class="form-group">
             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
               <input type="text" id="code-title" class="input-field" placeholder="Code Title (e.g., Quick sort algorithm)" style="flex: 2; min-width: 200px;" required>
@@ -634,13 +647,16 @@
             
             <textarea id="code-body" class="code-font" rows="6" placeholder="Paste your code snippet here..." required></textarea>
             
-            <button class="btn" onclick="saveCodeSnippet()">Save Code Snippet</button>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn" id="code-submit-btn" onclick="saveCodeSnippet()">Save Code Snippet</button>
+              <button class="btn btn-secondary" id="code-cancel-btn" style="display:none;" onclick="cancelCodeEdit()">Cancel</button>
+            </div>
           </div>
         </div>
 
         <!-- Saved Code Snippets Vault -->
         <div class="card">
-          <div class="card-title">Code Storage & Library</div>
+          <div class="card-title">Code Vault & Library</div>
           
           <!-- Search and Language Filter Bar -->
           <div class="filter-bar">
@@ -698,15 +714,15 @@
 
     async function verifyPassword() {
       const input = document.getElementById('password-input').value;
-      const errorEl = document.getElementById('lock-error');
       const hashedInput = await hashString(input);
 
       if (hashedInput === TARGET_HASH) {
         localStorage.setItem('hub_authenticated', 'true');
         unlockSite();
       } else {
-        errorEl.style.display = 'block';
-        document.getElementById('password-input').value = '';
+        // CLOSE WINDOW / REDIRECT TO BLANK PAGE ON INCORRECT PASSWORD
+        window.close();
+        window.location.replace("about:blank");
       }
     }
 
@@ -718,7 +734,6 @@
     function lockSite() {
       localStorage.removeItem('hub_authenticated');
       document.getElementById('password-input').value = '';
-      document.getElementById('lock-error').style.display = 'none';
       document.getElementById('app-content').style.display = 'none';
       document.getElementById('lock-screen').style.display = 'flex';
     }
@@ -816,6 +831,7 @@
 
     /* ================= SCHOOL ASSIGNMENTS ================= */
     let assignments = JSON.parse(localStorage.getItem('hub_assignments')) || [];
+    let editingAssignmentId = null;
 
     function saveAssignments() {
       localStorage.setItem('hub_assignments', JSON.stringify(assignments));
@@ -829,9 +845,41 @@
       const link = document.getElementById('assign-link').value;
       const due = document.getElementById('assign-due').value;
 
-      assignments.push({ id: Date.now(), name, link, due, completed: false });
-      document.getElementById('assignment-form').reset();
+      if (editingAssignmentId !== null) {
+        // UPDATE EXISTING
+        assignments = assignments.map(a => a.id === editingAssignmentId ? { ...a, name, link, due } : a);
+        cancelAssignmentEdit();
+      } else {
+        // ADD NEW
+        assignments.push({ id: Date.now(), name, link, due, completed: false });
+        document.getElementById('assignment-form').reset();
+      }
+      
       saveAssignments();
+    }
+
+    function editAssignment(id) {
+      const item = assignments.find(a => a.id === id);
+      if (item) {
+        editingAssignmentId = id;
+        document.getElementById('assign-name').value = item.name;
+        document.getElementById('assign-link').value = item.link || '';
+        document.getElementById('assign-due').value = item.due;
+
+        document.getElementById('assign-form-title').textContent = 'Edit Assignment';
+        document.getElementById('assign-submit-btn').textContent = 'Update Assignment';
+        document.getElementById('assign-cancel-btn').style.display = 'inline-block';
+
+        document.getElementById('assignment-form-card').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function cancelAssignmentEdit() {
+      editingAssignmentId = null;
+      document.getElementById('assignment-form').reset();
+      document.getElementById('assign-form-title').textContent = 'Add New Assignment';
+      document.getElementById('assign-submit-btn').textContent = 'Add Assignment';
+      document.getElementById('assign-cancel-btn').style.display = 'none';
     }
 
     function toggleAssignment(id) {
@@ -841,6 +889,7 @@
 
     function deleteAssignment(id) {
       assignments = assignments.filter(a => a.id !== id);
+      if (editingAssignmentId === id) cancelAssignmentEdit();
       saveAssignments();
     }
 
@@ -858,8 +907,9 @@
             <span class="item-sub">Due: ${dueDate.toLocaleString()}</span>
             ${a.link ? `<a href="${a.link}" target="_blank" class="alert-link">Open Link ↗</a>` : ''}
           </div>
-          <div style="display:flex; gap:0.5rem; align-items:center;">
+          <div style="display:flex; gap:0.4rem; align-items:center;">
             <input type="checkbox" ${a.completed ? 'checked' : ''} onclick="toggleAssignment(${a.id})">
+            <button class="btn-edit" onclick="editAssignment(${a.id})">Edit</button>
             <button class="btn-danger" onclick="deleteAssignment(${a.id})">Delete</button>
           </div>
         `;
@@ -903,6 +953,7 @@
 
     /* ================= NOTES & TEXT DOCUMENTS ================= */
     let notes = JSON.parse(localStorage.getItem('hub_notes')) || [];
+    let editingNoteId = null;
 
     function saveNote() {
       const title = document.getElementById('note-title').value.trim();
@@ -913,15 +964,46 @@
         return;
       }
 
-      notes.push({ id: Date.now(), title, content, date: new Date().toLocaleDateString() });
+      if (editingNoteId !== null) {
+        notes = notes.map(n => n.id === editingNoteId ? { ...n, title, content } : n);
+        cancelNoteEdit();
+      } else {
+        notes.push({ id: Date.now(), title, content, date: new Date().toLocaleDateString() });
+        document.getElementById('note-title').value = '';
+        document.getElementById('note-content').value = '';
+      }
+
       localStorage.setItem('hub_notes', JSON.stringify(notes));
+      renderNotes();
+    }
+
+    function editNote(id) {
+      const note = notes.find(n => n.id === id);
+      if (note) {
+        editingNoteId = id;
+        document.getElementById('note-title').value = note.title;
+        document.getElementById('note-content').value = note.content;
+
+        document.getElementById('note-form-title').textContent = 'Edit Note';
+        document.getElementById('note-submit-btn').textContent = 'Update Note';
+        document.getElementById('note-cancel-btn').style.display = 'inline-block';
+
+        document.getElementById('notes-form-card').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function cancelNoteEdit() {
+      editingNoteId = null;
       document.getElementById('note-title').value = '';
       document.getElementById('note-content').value = '';
-      renderNotes();
+      document.getElementById('note-form-title').textContent = 'Text Documents / Notes';
+      document.getElementById('note-submit-btn').textContent = 'Save Note';
+      document.getElementById('note-cancel-btn').style.display = 'none';
     }
 
     function deleteNote(id) {
       notes = notes.filter(n => n.id !== id);
+      if (editingNoteId === id) cancelNoteEdit();
       localStorage.setItem('hub_notes', JSON.stringify(notes));
       renderNotes();
     }
@@ -938,7 +1020,10 @@
         div.innerHTML = `
           <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
             <span class="item-title">${escapeHTML(n.title)}</span>
-            <button class="btn-danger" onclick="deleteNote(${n.id})">Delete</button>
+            <div style="display:flex; gap:0.4rem;">
+              <button class="btn-edit" onclick="editNote(${n.id})">Edit</button>
+              <button class="btn-danger" onclick="deleteNote(${n.id})">Delete</button>
+            </div>
           </div>
           <span class="item-sub" style="margin-bottom:0.5rem;">Saved on: ${n.date}</span>
           <p style="white-space: pre-wrap; font-size: 0.9rem; color: var(--text-main); background: var(--card-bg); padding: 0.5rem; border-radius: 4px; width: 100%; border: 1px solid var(--border);">${escapeHTML(n.content)}</p>
@@ -961,6 +1046,7 @@
 
     /* ================= CODE VAULT / SNIPPET SAVER ================= */
     let codeSnippets = JSON.parse(localStorage.getItem('hub_code_snippets')) || [];
+    let editingCodeId = null;
 
     function saveCodeSnippet() {
       const title = document.getElementById('code-title').value.trim();
@@ -973,26 +1059,57 @@
         return;
       }
 
-      codeSnippets.push({
-        id: Date.now(),
-        title,
-        lang,
-        desc,
-        code,
-        date: new Date().toLocaleDateString()
-      });
+      if (editingCodeId !== null) {
+        codeSnippets = codeSnippets.map(c => c.id === editingCodeId ? { ...c, title, lang, desc, code } : c);
+        cancelCodeEdit();
+      } else {
+        codeSnippets.push({
+          id: Date.now(),
+          title,
+          lang,
+          desc,
+          code,
+          date: new Date().toLocaleDateString()
+        });
+        document.getElementById('code-title').value = '';
+        document.getElementById('code-desc').value = '';
+        document.getElementById('code-body').value = '';
+      }
 
       localStorage.setItem('hub_code_snippets', JSON.stringify(codeSnippets));
+      renderCodeSnippets();
+    }
 
+    function editCodeSnippet(id) {
+      const item = codeSnippets.find(c => c.id === id);
+      if (item) {
+        editingCodeId = id;
+        document.getElementById('code-title').value = item.title;
+        document.getElementById('code-lang').value = item.lang;
+        document.getElementById('code-desc').value = item.desc || '';
+        document.getElementById('code-body').value = item.code;
+
+        document.getElementById('code-form-title').textContent = 'Edit Code Snippet';
+        document.getElementById('code-submit-btn').textContent = 'Update Code Snippet';
+        document.getElementById('code-cancel-btn').style.display = 'inline-block';
+
+        document.getElementById('code-form-card').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function cancelCodeEdit() {
+      editingCodeId = null;
       document.getElementById('code-title').value = '';
       document.getElementById('code-desc').value = '';
       document.getElementById('code-body').value = '';
-
-      renderCodeSnippets();
+      document.getElementById('code-form-title').textContent = 'Save Code Snippet';
+      document.getElementById('code-submit-btn').textContent = 'Save Code Snippet';
+      document.getElementById('code-cancel-btn').style.display = 'none';
     }
 
     function deleteCodeSnippet(id) {
       codeSnippets = codeSnippets.filter(c => c.id !== id);
+      if (editingCodeId === id) cancelCodeEdit();
       localStorage.setItem('hub_code_snippets', JSON.stringify(codeSnippets));
       renderCodeSnippets();
     }
@@ -1035,8 +1152,9 @@
               <span class="item-title">${escapeHTML(item.title)}</span>
               <span class="badge" style="margin-left: 0.5rem;">${item.lang}</span>
             </div>
-            <div style="display:flex; gap:0.5rem;">
+            <div style="display:flex; gap:0.4rem;">
               <button class="btn-copy" onclick="copySnippetCode(${item.id}, this)">Copy Code</button>
+              <button class="btn-edit" onclick="editCodeSnippet(${item.id})">Edit</button>
               <button class="btn-danger" onclick="deleteCodeSnippet(${item.id})">Delete</button>
             </div>
           </div>
