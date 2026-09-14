@@ -155,7 +155,7 @@
       font-size: 0.9rem;
       transition: all 0.2s ease;
       flex: 1;
-      min-width: 140px;
+      min-width: 130px;
       max-width: 220px;
       text-align: center;
     }
@@ -594,7 +594,7 @@
   <div id="lock-screen">
     <div class="lock-card">
       <div class="lock-title">🔒 Protected Workspace</div>
-      <p class="lock-sub">Enter Student or Teacher password to unlock.<br><span style="color: red;"><b>If password is entered incorrectly you will be locked out!</b></span></p>
+      <p class="lock-sub">Enter Student or Teacher password to unlock<br>If entered wrong you will be redirected out of the site!</b></p>
       <div class="form-group">
         <input type="password" id="password-input" class="input-field" placeholder="Enter password..." onkeypress="handleLockKeyPress(event)">
         <button class="btn" onclick="verifyPassword()">Unlock Hub</button>
@@ -610,12 +610,13 @@
         <span id="user-badge" class="badge">User: Student</span>
         <button class="lock-btn-top" onclick="lockSite()">🔒 Lock / Switch</button>
       </div>
-      <h1>💻 Student Hub</h1>
+      <h1>💻 Dev Student Hub</h1>
       <nav class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('hub')">Main Hub</button>
         <button class="tab-btn" onclick="switchTab('assignments')">School Assignments</button>
         <button class="tab-btn" onclick="switchTab('workspace')">Notes, Loader & Code Storage</button>
         <button class="tab-btn" onclick="switchTab('logs')">📋 Activity Log</button>
+        <button class="tab-btn" onclick="switchTab('games')">🎮 Break Tab</button>
       </nav>
     </header>
 
@@ -753,7 +754,7 @@
 
         <!-- Saved Code Snippets Vault -->
         <div class="card">
-          <div class="card-title">Code Storage & Library</div>
+          <div class="card-title">Code Vault & Library</div>
           
           <!-- Search and Language Filter Bar -->
           <div class="filter-bar">
@@ -801,6 +802,22 @@
         </div>
       </div>
 
+      <!-- TAB 5: MINI GAME -->
+      <div id="tab-games" class="tab-content">
+        <div class="card center-text">
+          <div class="card-title">Study Break Mini-Game: Snake</div>
+          <div style="margin-bottom: 1rem;">
+            <span style="font-size: 1.1rem; font-weight: 600; margin-right: 1.5rem;">Score: <span id="snake-score" style="color: var(--accent);">0</span></span>
+            <span style="font-size: 1.1rem; font-weight: 600;">High Score: <span id="snake-highscore" style="color: var(--warning);">0</span></span>
+          </div>
+          <canvas id="snake-canvas" width="400" height="400" style="background: var(--bg); border: 2px solid var(--border); border-radius: 8px; max-width: 100%; display: block; margin: 0 auto 1rem auto;"></canvas>
+          <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn" onclick="startSnakeGame()">Start / Restart Game</button>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">Use Arrow Keys or WASD to navigate the snake.</p>
+        </div>
+      </div>
+
     </div>
 
     <div class="quick-links">
@@ -814,8 +831,8 @@
   <script>
     /* ================= AUTHENTICATION & SECURITY ================= */
     // Encrypted SHA-256 Hashes
-    const STUDENT_HASH = "851d709390b367c9df9f3e1b50b4471bc514c5afd07df4a10ad592691d0934c0";
-    const TEACHER_HASH = "4776e0d485160c542ef14be33dc101cbd5e06ecbff4a644d814d6d17fd7d390c"; 
+    const STUDENT_HASH = "851d709390b367c9df9f3e1b50b4471bc514c5afd07df4a10ad592691d0934c0"; // Stud7Hu8_
+    const TEACHER_HASH = "4776e0d485160c542ef14be33dc101cbd5e06ecbff4a644d814d6d17fd7d390c"; // Teach9Hub_
 
     let currentUserRole = localStorage.getItem('hub_user_role') || 'Student';
 
@@ -955,6 +972,9 @@
         checkDueWarnings();
       } else if (tabName === 'logs') {
         renderActivityLogs();
+      } else if (tabName === 'games') {
+        const hs = localStorage.getItem('hub_snake_highscore') || 0;
+        document.getElementById('snake-highscore').textContent = hs;
       }
     }
 
@@ -1389,6 +1409,133 @@
         list.appendChild(div);
       });
     }
+
+    /* ================= MINI GAME (SNAKE) ================= */
+    let snakeCanvas = null;
+    let snakeCtx = null;
+    const grid = 20;
+    let count = 0;
+    let score = 0;
+    let highScore = localStorage.getItem('hub_snake_highscore') || 0;
+    let snakeAnimationId = null;
+
+    let snake = {
+      x: 160,
+      y: 160,
+      dx: grid,
+      dy: 0,
+      cells: [],
+      maxCells: 4
+    };
+
+    let apple = {
+      x: 320,
+      y: 320
+    };
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    function startSnakeGame() {
+      snakeCanvas = document.getElementById('snake-canvas');
+      if (!snakeCanvas) return;
+      snakeCtx = snakeCanvas.getContext('2d');
+
+      if (snakeAnimationId) cancelAnimationFrame(snakeAnimationId);
+      score = 0;
+      document.getElementById('snake-score').textContent = score;
+      document.getElementById('snake-highscore').textContent = highScore;
+      snake.x = 160;
+      snake.y = 160;
+      snake.cells = [];
+      snake.maxCells = 4;
+      snake.dx = grid;
+      snake.dy = 0;
+      apple.x = getRandomInt(0, 20) * grid;
+      apple.y = getRandomInt(0, 20) * grid;
+      count = 0;
+      snakeLoop();
+    }
+
+    function snakeLoop() {
+      snakeAnimationId = requestAnimationFrame(snakeLoop);
+
+      // Frame rate throttling (~10 fps for comfortable speed)
+      if (++count < 6) return;
+
+      count = 0;
+      snakeCtx.clearRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+
+      snake.x += snake.dx;
+      snake.y += snake.dy;
+
+      // Screen wrapping
+      if (snake.x < 0) snake.x = snakeCanvas.width - grid;
+      else if (snake.x >= snakeCanvas.width) snake.x = 0;
+
+      if (snake.y < 0) snake.y = snakeCanvas.height - grid;
+      else if (snake.y >= snakeCanvas.height) snake.y = 0;
+
+      snake.cells.unshift({ x: snake.x, y: snake.y });
+
+      if (snake.cells.length > snake.maxCells) {
+        snake.cells.pop();
+      }
+
+      // Draw Apple
+      snakeCtx.fillStyle = '#ef4444';
+      snakeCtx.fillRect(apple.x, apple.y, grid - 1, grid - 1);
+
+      // Draw Snake
+      snakeCtx.fillStyle = '#6366f1';
+      snake.cells.forEach((cell, index) => {
+        snakeCtx.fillRect(cell.x, cell.y, grid - 1, grid - 1);
+
+        // Ate Apple
+        if (cell.x === apple.x && cell.y === apple.y) {
+          snake.maxCells++;
+          score += 10;
+          document.getElementById('snake-score').textContent = score;
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('hub_snake_highscore', highScore);
+            document.getElementById('snake-highscore').textContent = highScore;
+          }
+          apple.x = getRandomInt(0, 20) * grid;
+          apple.y = getRandomInt(0, 20) * grid;
+        }
+
+        // Collision Check
+        for (let i = index + 1; i < snake.cells.length; i++) {
+          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+            logActivity(`Played Snake game (Score: ${score})`);
+            alert(`Game Over! Final Score: ${score}`);
+            startSnakeGame();
+          }
+        }
+      });
+    }
+
+    // Keyboard controls for game
+    document.addEventListener('keydown', (e) => {
+      const gameTab = document.getElementById('tab-games');
+      if (!gameTab || !gameTab.classList.contains('active')) return;
+
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      if ((e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') && snake.dx === 0) {
+        snake.dx = -grid; snake.dy = 0;
+      } else if ((e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') && snake.dy === 0) {
+        snake.dy = -grid; snake.dx = 0;
+      } else if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && snake.dx === 0) {
+        snake.dx = grid; snake.dy = 0;
+      } else if ((e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') && snake.dy === 0) {
+        snake.dy = grid; snake.dx = 0;
+      }
+    });
 
     /* ================= UTILS ================= */
     function escapeHTML(str) {
