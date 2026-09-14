@@ -594,7 +594,7 @@
   <div id="lock-screen">
     <div class="lock-card">
       <div class="lock-title">🔒 Protected Workspace</div>
-      <p class="lock-sub">Enter Student or Teacher password to unlock<br>If entered wrong you will be redirected out of the site!</b></p>
+      <p class="lock-sub">Enter Student or Teacher password to unlock</p>
       <div class="form-group">
         <input type="password" id="password-input" class="input-field" placeholder="Enter password..." onkeypress="handleLockKeyPress(event)">
         <button class="btn" onclick="verifyPassword()">Unlock Hub</button>
@@ -616,7 +616,7 @@
         <button class="tab-btn" onclick="switchTab('assignments')">School Assignments</button>
         <button class="tab-btn" onclick="switchTab('workspace')">Notes, Loader & Code Storage</button>
         <button class="tab-btn" onclick="switchTab('logs')">📋 Activity Log</button>
-        <button class="tab-btn" onclick="switchTab('games')">🎮 Break Tab</button>
+        <button class="tab-btn" onclick="switchTab('games')">🎮 Mini Game</button>
       </nav>
     </header>
 
@@ -805,16 +805,24 @@
       <!-- TAB 5: MINI GAME -->
       <div id="tab-games" class="tab-content">
         <div class="card center-text">
-          <div class="card-title">Study Break Mini-Game: Snake</div>
-          <div style="margin-bottom: 1rem;">
-            <span style="font-size: 1.1rem; font-weight: 600; margin-right: 1.5rem;">Score: <span id="snake-score" style="color: var(--accent);">0</span></span>
-            <span style="font-size: 1.1rem; font-weight: 600;">High Score: <span id="snake-highscore" style="color: var(--warning);">0</span></span>
+          <div class="card-title">Study Break Mini-Game: Cosmic Clicker</div>
+          <div style="margin-bottom: 1.5rem;">
+            <span style="font-size: 1.3rem; font-weight: 700;">Stardust: <span id="clicker-count" style="color: var(--accent);">0</span></span>
+            <span style="font-size: 0.9rem; color: var(--text-muted); margin-left: 1rem;">Per Second: <span id="clicker-sps">0</span></span>
           </div>
-          <canvas id="snake-canvas" width="400" height="400" style="background: var(--bg); border: 2px solid var(--border); border-radius: 8px; max-width: 100%; display: block; margin: 0 auto 1rem auto;"></canvas>
-          <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
-            <button class="btn" onclick="startSnakeGame()">Start / Restart Game</button>
+          
+          <!-- Big Clickable Planet Button -->
+          <button id="cosmic-planet-btn" class="btn" onclick="clickCosmicPlanet()" style="width: 140px; height: 140px; border-radius: 50%; font-size: 3.5rem; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.05s ease;" onmousedown="this.style.transform='scale(0.92)'" onmouseup="this.style.transform='scale(1)'">🪐</button>
+          
+          <!-- Upgrade Controls -->
+          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="buyCosmicUpgrade('auto')">
+              🛰️ Deploy Probe (<span id="auto-cost">15</span> Stardust)
+            </button>
+            <button class="btn btn-secondary" onclick="buyCosmicUpgrade('multiplier')">
+              ⚡ Power Core (<span id="multi-cost">50</span> Stardust)
+            </button>
           </div>
-          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">Use Arrow Keys or WASD to navigate the snake.</p>
         </div>
       </div>
 
@@ -831,8 +839,8 @@
   <script>
     /* ================= AUTHENTICATION & SECURITY ================= */
     // Encrypted SHA-256 Hashes
-    const STUDENT_HASH = "851d709390b367c9df9f3e1b50b4471bc514c5afd07df4a10ad592691d0934c0"; // Stud7Hu8_
-    const TEACHER_HASH = "4776e0d485160c542ef14be33dc101cbd5e06ecbff4a644d814d6d17fd7d390c"; // Teach9Hub_
+    const STUDENT_HASH = "851d709390b367c9df9f3e1b50b4471bc514c5afd07df4a10ad592691d0934c0"; 
+    const TEACHER_HASH = "4776e0d485160c542ef14be33dc101cbd5e06ecbff4a644d814d6d17fd7d390c";
 
     let currentUserRole = localStorage.getItem('hub_user_role') || 'Student';
 
@@ -973,8 +981,7 @@
       } else if (tabName === 'logs') {
         renderActivityLogs();
       } else if (tabName === 'games') {
-        const hs = localStorage.getItem('hub_snake_highscore') || 0;
-        document.getElementById('snake-highscore').textContent = hs;
+        updateClickerUI();
       }
     }
 
@@ -1410,132 +1417,67 @@
       });
     }
 
-    /* ================= MINI GAME (SNAKE) ================= */
-    let snakeCanvas = null;
-    let snakeCtx = null;
-    const grid = 20;
-    let count = 0;
-    let score = 0;
-    let highScore = localStorage.getItem('hub_snake_highscore') || 0;
-    let snakeAnimationId = null;
+    /* ================= MINI GAME (COSMIC CLICKER) ================= */
+    let stardust = parseInt(localStorage.getItem('hub_cosmic_stardust')) || 0;
+    let probes = parseInt(localStorage.getItem('hub_cosmic_probes')) || 0;
+    let multiplier = parseInt(localStorage.getItem('hub_cosmic_multiplier')) || 1;
 
-    let snake = {
-      x: 160,
-      y: 160,
-      dx: grid,
-      dy: 0,
-      cells: [],
-      maxCells: 4
-    };
+    function updateClickerUI() {
+      const countEl = document.getElementById('clicker-count');
+      const spsEl = document.getElementById('clicker-sps');
+      const autoCostEl = document.getElementById('auto-cost');
+      const multiCostEl = document.getElementById('multi-cost');
 
-    let apple = {
-      x: 320,
-      y: 320
-    };
-
-    function getRandomInt(min, max) {
-      return Math.floor(Math.random() * (max - min)) + min;
+      if (countEl) countEl.textContent = stardust;
+      if (spsEl) spsEl.textContent = probes;
+      if (autoCostEl) autoCostEl.textContent = Math.floor(15 * Math.pow(1.15, probes));
+      if (multiCostEl) multiCostEl.textContent = Math.floor(50 * Math.pow(1.5, multiplier - 1));
     }
 
-    function startSnakeGame() {
-      snakeCanvas = document.getElementById('snake-canvas');
-      if (!snakeCanvas) return;
-      snakeCtx = snakeCanvas.getContext('2d');
-
-      if (snakeAnimationId) cancelAnimationFrame(snakeAnimationId);
-      score = 0;
-      document.getElementById('snake-score').textContent = score;
-      document.getElementById('snake-highscore').textContent = highScore;
-      snake.x = 160;
-      snake.y = 160;
-      snake.cells = [];
-      snake.maxCells = 4;
-      snake.dx = grid;
-      snake.dy = 0;
-      apple.x = getRandomInt(0, 20) * grid;
-      apple.y = getRandomInt(0, 20) * grid;
-      count = 0;
-      snakeLoop();
+    function clickCosmicPlanet() {
+      stardust += multiplier;
+      saveClickerData();
+      updateClickerUI();
     }
 
-    function snakeLoop() {
-      snakeAnimationId = requestAnimationFrame(snakeLoop);
-
-      // Frame rate throttling (~10 fps for comfortable speed)
-      if (++count < 6) return;
-
-      count = 0;
-      snakeCtx.clearRect(0, 0, snakeCanvas.width, snakeCanvas.height);
-
-      snake.x += snake.dx;
-      snake.y += snake.dy;
-
-      // Screen wrapping
-      if (snake.x < 0) snake.x = snakeCanvas.width - grid;
-      else if (snake.x >= snakeCanvas.width) snake.x = 0;
-
-      if (snake.y < 0) snake.y = snakeCanvas.height - grid;
-      else if (snake.y >= snakeCanvas.height) snake.y = 0;
-
-      snake.cells.unshift({ x: snake.x, y: snake.y });
-
-      if (snake.cells.length > snake.maxCells) {
-        snake.cells.pop();
-      }
-
-      // Draw Apple
-      snakeCtx.fillStyle = '#ef4444';
-      snakeCtx.fillRect(apple.x, apple.y, grid - 1, grid - 1);
-
-      // Draw Snake
-      snakeCtx.fillStyle = '#6366f1';
-      snake.cells.forEach((cell, index) => {
-        snakeCtx.fillRect(cell.x, cell.y, grid - 1, grid - 1);
-
-        // Ate Apple
-        if (cell.x === apple.x && cell.y === apple.y) {
-          snake.maxCells++;
-          score += 10;
-          document.getElementById('snake-score').textContent = score;
-          if (score > highScore) {
-            highScore = score;
-            localStorage.setItem('hub_snake_highscore', highScore);
-            document.getElementById('snake-highscore').textContent = highScore;
-          }
-          apple.x = getRandomInt(0, 20) * grid;
-          apple.y = getRandomInt(0, 20) * grid;
+    function buyCosmicUpgrade(type) {
+      if (type === 'auto') {
+        const cost = Math.floor(15 * Math.pow(1.15, probes));
+        if (stardust >= cost) {
+          stardust -= cost;
+          probes++;
+          logActivity(`Purchased Cosmic Probe (Total: ${probes})`);
+        } else {
+          alert('Not enough Stardust!');
         }
-
-        // Collision Check
-        for (let i = index + 1; i < snake.cells.length; i++) {
-          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
-            logActivity(`Played Snake game (Score: ${score})`);
-            alert(`Game Over! Final Score: ${score}`);
-            startSnakeGame();
-          }
+      } else if (type === 'multiplier') {
+        const cost = Math.floor(50 * Math.pow(1.5, multiplier - 1));
+        if (stardust >= cost) {
+          stardust -= cost;
+          multiplier++;
+          logActivity(`Upgraded Click Multiplier (Level: ${multiplier})`);
+        } else {
+          alert('Not enough Stardust!');
         }
-      });
+      }
+      saveClickerData();
+      updateClickerUI();
     }
 
-    // Keyboard controls for game
-    document.addEventListener('keydown', (e) => {
-      const gameTab = document.getElementById('tab-games');
-      if (!gameTab || !gameTab.classList.contains('active')) return;
+    function saveClickerData() {
+      localStorage.setItem('hub_cosmic_stardust', stardust);
+      localStorage.setItem('hub_cosmic_probes', probes);
+      localStorage.setItem('hub_cosmic_multiplier', multiplier);
+    }
 
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(e.key)) {
-        e.preventDefault();
+    // Auto-generate stardust every second
+    setInterval(() => {
+      if (probes > 0) {
+        stardust += probes;
+        saveClickerData();
+        updateClickerUI();
       }
-
-      if ((e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') && snake.dx === 0) {
-        snake.dx = -grid; snake.dy = 0;
-      } else if ((e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') && snake.dy === 0) {
-        snake.dy = -grid; snake.dx = 0;
-      } else if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && snake.dx === 0) {
-        snake.dx = grid; snake.dy = 0;
-      } else if ((e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') && snake.dy === 0) {
-        snake.dy = grid; snake.dx = 0;
-      }
-    });
+    }, 1000);
 
     /* ================= UTILS ================= */
     function escapeHTML(str) {
@@ -1550,6 +1492,7 @@
     renderCodeSnippets();
     renderActivityLogs();
     checkDueWarnings();
+    updateClickerUI();
   </script>
 </body>
 </html>
